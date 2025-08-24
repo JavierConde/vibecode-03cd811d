@@ -1,12 +1,13 @@
 import uuid
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Path
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="CRUD Usuario", version="1.0")
 
-db: List["UsuarioInDB"] = []
+app = FastAPI(title="CRUD Usuario", version="1.0.0")
+
+db: List[dict] = []
 
 
 class UsuarioBase(BaseModel):
@@ -27,56 +28,53 @@ class UsuarioUpdate(UsuarioBase):
 
 class UsuarioInDB(UsuarioBase):
     id: int
-    
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "id": 1,
-                "email": "usuario@example.com",
-                "password": "password",
-                "nombre": "Usuario Ejemplo",
-            }
-        }
-    }
+    class Config:
+        orm_mode = True
 
 
-@app.post("/usuarios/", response_model=UsuarioInDB, status_code=status.HTTP_201_CREATED)
+class UsuarioResponse(BaseModel):
+    id: int
+    email: str
+    password: str
+    nombre: str
+
+
+@app.post("/usuarios", response_model=UsuarioResponse, status_code=201, tags=["usuarios"])
 async def create_usuario(usuario: UsuarioCreate):
-    db_id = len(db) + 1
-    new_usuario = UsuarioInDB(id=db_id, **usuario.dict())
-    db.append(new_usuario)
-    return new_usuario
+    new_id = len(db) + 1
+    new_usuario = UsuarioInDB(id=new_id, email=usuario.email, password=usuario.password, nombre=usuario.nombre)
+    db.append(new_usuario.dict())
+    return UsuarioResponse(**db[-1])
 
 
-@app.get("/usuarios/", response_model=List[UsuarioInDB])
-async def read_usuarios():
-    return db
+@app.get("/usuarios", response_model=List[UsuarioResponse], tags=["usuarios"])
+async def get_usuarios():
+    return [UsuarioResponse(**usuario) for usuario in db]
 
 
-@app.get("/usuarios/{usuario_id}", response_model=UsuarioInDB)
-async def read_usuario(usuario_id: int):
-    usuario = next((u for u in db if u.id == usuario_id), None)
-    if usuario is None:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    return usuario
+@app.get("/usuarios/{id}", response_model=UsuarioResponse, tags=["usuarios"])
+async def get_usuario(id: int = Path(...)):
+    for usuario in db:
+        if usuario["id"] == id:
+            return UsuarioResponse(**usuario)
+    raise HTTPException(status_code=404, detail="Usuario not found")
 
 
-@app.put("/usuarios/{usuario_id}", response_model=UsuarioInDB)
-async def update_usuario(usuario_id: int, usuario: UsuarioUpdate):
-    usuario_index = next((i for i, u in enumerate(db) if u.id == usuario_id), None)
-    if usuario_index is None:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    update_data = usuario.dict(exclude_unset=True)
-    updated_usuario = db[usuario_index]
-    updated_usuario = UsuarioInDB(**updated_usuario.dict(), **update_data)
-    db[usuario_index] = updated_usuario
-    return updated_usuario
+@app.put("/usuarios/{id}", response_model=UsuarioResponse, tags=["usuarios"])
+async def update_usuario(id: int = Path(...), usuario: UsuarioUpdate = ...):
+    for i, u in enumerate(db):
+        if u["id"] == id:
+            updated_usuario = UsuarioInDB(**u, **usuario.dict(exclude_unset=True))
+            db[i] = updated_usuario.dict()
+            return UsuarioResponse(**db[i])
+    raise HTTPException(status_code=404, detail="Usuario not found")
 
 
-@app.delete("/usuarios/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_usuario(usuario_id: int):
-    usuario_index = next((i for i, u in enumerate(db) if u.id == usuario_id), None)
-    if usuario_index is None:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    del db[usuario_index]
+@app.delete("/usuarios/{id}", response_model=None, status_code=204, tags=["usuarios"])
+async def delete_usuario(id: int = Path(...)):
+    for i, u in enumerate(db):
+        if u["id"] == id:
+            del db[i]
+            return
+    raise HTTPException(status_code=404, detail="Usuario not found")
