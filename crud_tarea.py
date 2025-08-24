@@ -4,9 +4,10 @@ from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-app = FastAPI()
+app = FastAPI(title="Tarea CRUD", version="1.0.0")
 
-# Modelos Pydantic
+db = []
+
 class TareaBase(BaseModel):
     titulo: str
     descripcion: str
@@ -16,7 +17,7 @@ class TareaBase(BaseModel):
 class TareaCreate(TareaBase):
     pass
 
-class TareaUpdate(BaseModel):
+class TareaUpdate(TareaBase):
     titulo: Optional[str] = None
     descripcion: Optional[str] = None
     completada: Optional[bool] = None
@@ -28,17 +29,11 @@ class TareaInDB(TareaBase):
     class Config:
         orm_mode = True
 
-# Base de datos en memoria
-db: List[TareaInDB] = []
-next_id = 1
 
-
-# APIRouter
 @app.post("/tareas/", response_model=TareaInDB, tags=["tareas"])
 async def create_tarea(tarea: TareaCreate):
-    new_tarea = TareaInDB(id=next_id, **tarea.dict())
-    global next_id
-    next_id +=1
+    id = len(db) + 1
+    new_tarea = TareaInDB(**tarea.dict(), id=id)
     db.append(new_tarea)
     return new_tarea
 
@@ -52,25 +47,25 @@ async def read_tareas():
 async def read_tarea(tarea_id: int):
     tarea = next((tarea for tarea in db if tarea.id == tarea_id), None)
     if tarea is None:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+        raise HTTPException(status_code=404, detail="Tarea not found")
     return tarea
 
 
 @app.put("/tareas/{tarea_id}", response_model=TareaInDB, tags=["tareas"])
 async def update_tarea(tarea_id: int, tarea: TareaUpdate):
-    tarea_index = next((i for i, tarea_db in enumerate(db) if tarea_db.id == tarea_id), None)
+    tarea_index = next((i for i, tarea in enumerate(db) if tarea.id == tarea_id), None)
     if tarea_index is None:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
-    updated_tarea_data = tarea.dict(exclude_unset=True)
-    updated_tarea = db[tarea_index].copy(update=updated_tarea_data)
+        raise HTTPException(status_code=404, detail="Tarea not found")
+    tarea_data = tarea.dict(exclude_unset=True)
+    updated_tarea = db[tarea_index].copy(update=tarea_data)
     db[tarea_index] = updated_tarea
     return updated_tarea
 
 
 @app.delete("/tareas/{tarea_id}", tags=["tareas"])
 async def delete_tarea(tarea_id: int):
-    tarea_index = next((i for i, tarea_db in enumerate(db) if tarea_db.id == tarea_id), None)
+    tarea_index = next((i for i, tarea in enumerate(db) if tarea.id == tarea_id), None)
     if tarea_index is None:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+        raise HTTPException(status_code=404, detail="Tarea not found")
     del db[tarea_index]
-    return {"message": "Tarea eliminada"}
+    return {"message": "Tarea deleted successfully"}

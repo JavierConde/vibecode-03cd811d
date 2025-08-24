@@ -1,50 +1,50 @@
-Este código proporciona una función para generar una tabla HTML que representa la lista de tareas.  Asume que se recibe una lista de diccionarios, donde cada diccionario representa una tarea con los campos 'titulo', 'descripcion', y 'completada'.  Necesitará una librería para manejar HTML, como `html` o `BeautifulSoup`, pero este ejemplo es lo suficientemente simple como para no necesitarlas para una representación básica.
+Este código Python representa un bloque `tables`  simple que muestra datos de tareas en formato de tabla.  Se asume que la data ya está obtenida de la base de datos (bloque `db`) y procesada por el bloque `crud`.  Este ejemplo utiliza la librería `tabulate` para una fácil representación.  Para una aplicación completa, se necesitaría integrarla con un framework web como Flask o Django.
 
 ```python
-def generate_task_table(tasks):
-    """Genera una tabla HTML para mostrar una lista de tareas.
+from tabulate import tabulate
+
+def display_tasks(tasks):
+    """
+    Displays a list of tasks in a tabular format.
 
     Args:
-        tasks: Una lista de diccionarios, donde cada diccionario representa una tarea 
-               con los campos 'titulo', 'descripcion', y 'completada'.
-
-    Returns:
-        Una cadena de texto que contiene el código HTML de la tabla.  Retorna una cadena vacía si la lista de tareas está vacía.
+        tasks: A list of dictionaries, where each dictionary represents a task 
+               with keys 'id', 'titulo', 'descripcion', 'completada'.
     """
-
     if not tasks:
-        return ""
+        print("No hay tareas para mostrar.")
+        return
 
-    table_html = "<table>\n"
-    table_html += "<thead><tr><th>Título</th><th>Descripción</th><th>Completada</th></tr></thead>\n"
-    table_html += "<tbody>\n"
+    headers = ["ID", "Título", "Descripción", "Completada"]
+    data = [[task['id'], task['titulo'], task['descripcion'], task['completada']] for task in tasks]
 
-    for task in tasks:
-        completed_status = "Sí" if task['completada'] else "No"
-        table_html += f"<tr><td>{task['titulo']}</td><td>{task['descripcion']}</td><td>{completed_status}</td></tr>\n"
-
-    table_html += "</tbody>\n"
-    table_html += "</table>"
-    return table_html
+    print(tabulate(data, headers=headers, tablefmt="grid"))
 
 
-# Ejemplo de uso:
-tasks_data = [
-    {'titulo': 'Tarea 1', 'descripcion': 'Descripción de la tarea 1', 'completada': True},
-    {'titulo': 'Tarea 2', 'descripcion': 'Descripción de la tarea 2', 'completada': False},
-    {'titulo': 'Tarea 3', 'descripcion': 'Descripción de la tarea 3', 'completada': True}
+# Ejemplo de uso (reemplazar con datos reales de la base de datos):
+sample_tasks = [
+    {'id': 1, 'titulo': 'Comprar leche', 'descripcion': 'Comprar una galón de leche descremada', 'completada': True},
+    {'id': 2, 'titulo': 'Pagar cuentas', 'descripcion': 'Pagar las cuentas del mes', 'completada': False},
+    {'id': 3, 'titulo': 'Llamar a Juan', 'descripcion': 'Llamar a Juan para coordinar la reunión', 'completada': False}
 ]
 
-html_table = generate_task_table(tasks_data)
-print(html_table)
-
-# Para usar con una librería HTML:
-# from html import escape # Para evitar problemas con caracteres especiales
-
-# ... dentro de la función generate_task_table ...
-# table_html += f"<tr><td>{escape(task['titulo'])}</td><td>{escape(task['descripcion'])}</td><td>{completed_status}</td></tr>\n"
-# ...
+display_tasks(sample_tasks)
 
 ```
 
-Este código genera una tabla HTML básica.  Para una aplicación real,  se debería considerar el uso de un framework web como Flask o Django para manejar la generación del HTML y la interacción con el usuario, así como una base de datos para persistir los datos.  Además,  la función `escape` de la librería `html` se recomienda para prevenir vulnerabilidades XSS al mostrar datos de usuario en el HTML.
+Para instalar `tabulate`:
+
+```bash
+pip install tabulate
+```
+
+Este bloque `tables` es funcional pero básico.  Para una aplicación real,  se necesitarían mejoras como:
+
+* **Paginación:**  Para manejar grandes conjuntos de datos.
+* **Ordenamiento:**  Permitir ordenar la tabla por diferentes columnas.
+* **Filtrado:**  Permitir filtrar la tabla basándose en criterios específicos.
+* **Integración con un framework web:**  Para mostrar la tabla en una interfaz de usuario.
+* **Manejo de errores:**  Para controlar errores en la entrada de datos.
+
+
+Este ejemplo proporciona una base sólida para la construcción de un bloque `tables` más robusto y completo.

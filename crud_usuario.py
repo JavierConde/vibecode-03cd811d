@@ -1,11 +1,11 @@
 import uuid
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Path
+from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel, Field
 
-
-app = FastAPI(title="Usuario CRUD", version="1.0.0")
+app = FastAPI()
+router = APIRouter(prefix="/users", tags=["users"])
 
 db: List[dict] = []
 
@@ -15,65 +15,62 @@ class UsuarioBase(BaseModel):
     password: str
     nombre: str
 
+
 class UsuarioCreate(UsuarioBase):
     pass
+
 
 class UsuarioUpdate(UsuarioBase):
     email: Optional[str] = None
     password: Optional[str] = None
     nombre: Optional[str] = None
 
+
 class UsuarioInDB(UsuarioBase):
     id: int
 
-    class Config:
-        orm_mode = True
-
 
 class Usuario(UsuarioInDB):
-    id: int = Field(..., ge=1)  # for clarity
+    pass
 
 
-@app.post("/usuarios", response_model=Usuario, status_code=201)
-async def create_usuario(usuario: UsuarioCreate):
+@router.post("/", response_model=Usuario)
+async def create_user(user: UsuarioCreate):
     id = len(db) + 1
-    new_usuario = UsuarioInDB(**usuario.dict(), id=id)
-    db.append(new_usuario.dict())
-    return new_usuario
+    new_user = UsuarioInDB(**user.dict(), id=id)
+    db.append(new_user.dict())
+    return new_user
 
 
-@app.get("/usuarios", response_model=List[Usuario])
-async def read_usuarios():
+@router.get("/", response_model=List[Usuario])
+async def read_users():
     return db
 
 
-@app.get("/usuarios/{id}", response_model=Usuario)
-async def read_usuario(id: int = Path(..., gt=0)):
-    usuario = [u for u in db if u["id"] == id]
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    return usuario[0]
+@router.get("/{user_id}", response_model=Usuario)
+async def read_user(user_id: int):
+    for user in db:
+        if user["id"] == user_id:
+            return Usuario(**user)
+    raise HTTPException(status_code=404, detail="User not found")
 
 
-@app.put("/usuarios/{id}", response_model=Usuario)
-async def update_usuario(id: int = Path(..., gt=0), usuario: UsuarioUpdate = ...):
-    usuario_index = next((i for i, item in enumerate(db) if item["id"] == id), None)
-    if usuario_index is None:
-        raise HTTPException(status_code=404, detail="Usuario not found")
+@router.put("/{user_id}", response_model=Usuario)
+async def update_user(user_id: int, user: UsuarioUpdate):
+    for i, user_db in enumerate(db):
+        if user_db["id"] == user_id:
+            update_data = user.dict(exclude_unset=True)
+            db[i] = {**user_db, **update_data}
+            return Usuario(**db[i])
+    raise HTTPException(status_code=404, detail="User not found")
 
-    updated_usuario_data = usuario.dict(exclude_unset=True)
-    db[usuario_index].update(updated_usuario_data)
-    return db[usuario_index]
 
+@router.delete("/{user_id}", response_model=None)
+async def delete_user(user_id: int):
+    for i, user in enumerate(db):
+        if user["id"] == user_id:
+            del db[i]
+            return
+    raise HTTPException(status_code=404, detail="User not found")
 
-@app.delete("/usuarios/{id}", status_code=204)
-async def delete_usuario(id: int = Path(..., gt=0)):
-    usuario_index = next((i for i, item in enumerate(db) if item["id"] == id), None)
-    if usuario_index is None:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    del db[usuario_index]
-    return {"message": "Usuario deleted successfully"}
-
-```
-
-This code uses an in-memory list for simplicity.  For a production application, replace `db` with a proper database connection (e.g., using SQLAlchemy).  Also, note that password handling in this example is extremely insecure and should **never** be used in production.  Proper password hashing (e.g., using bcrypt or Argon2) is crucial.
+app.include_router(router)

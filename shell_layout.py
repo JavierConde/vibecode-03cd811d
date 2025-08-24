@@ -1,79 +1,55 @@
-Este código proporciona una estructura básica de shell/layout para una aplicación de línea de comandos en Python.  Se puede extender para incluir funcionalidades más avanzadas, como menús interactivos y manejo de errores más robusto.  Necesitará ser integrado con los otros bloques (auth, users, db, crud, forms, tables) para formar la aplicación completa.
+Este código proporciona un layout básico de shell para una aplicación de línea de comandos.  Necesitará integrarlo con los otros bloques (auth, users, db, crud, forms, tables) mencionados en el plan.  Este ejemplo solo muestra la estructura y la interacción básica del usuario.
 
 ```python
 import os
 import sys
 
 def clear_screen():
-    """Limpia la pantalla de la consola."""
+    """Borra la pantalla de la terminal."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def display_header(title):
-    """Muestra un encabezado en la consola."""
+def display_menu():
+    """Muestra el menú principal."""
     clear_screen()
-    print("-" * 40)
-    print(f"  {title.center(36)}")
-    print("-" * 40)
-    print()
-
-
-def display_menu(options):
-    """Muestra un menú de opciones en la consola."""
-    for i, option in enumerate(options):
-        print(f"{i+1}. {option}")
-    print()
-
-
-def get_user_choice(num_options):
-    """Obtiene la opción del usuario y valida la entrada."""
-    while True:
-        try:
-            choice = int(input("Ingrese su opción: "))
-            if 1 <= choice <= num_options:
-                return choice
-            else:
-                print("Opción inválida. Por favor, intente de nuevo.")
-        except ValueError:
-            print("Entrada inválida. Por favor, ingrese un número.")
+    print("Aplicación de Lista de Tareas")
+    print("1. Crear tarea")
+    print("2. Listar tareas")
+    print("3. Marcar tarea como completa")
+    print("4. Salir")
+    print("-" * 20)
 
 
 def main():
-    """Función principal de la aplicación."""
-
+    """Función principal del programa."""
     while True:
-        display_header("Aplicación de Lista de Tareas")
-        display_menu([
-            "Crear Tarea",
-            "Listar Tareas",
-            "Marcar Tarea como Completada",
-            "Salir"
-        ])
-
-        choice = get_user_choice(4)
-
-        if choice == 1:
-            # Aquí se llamaría a la función para crear una tarea (del bloque 'crud' y 'forms')
-            print("Funcionalidad de 'Crear Tarea' aún no implementada.")
-            input("Presione Enter para continuar...")
-
-        elif choice == 2:
-            # Aquí se llamaría a la función para listar tareas (del bloque 'crud' y 'tables')
-            print("Funcionalidad de 'Listar Tareas' aún no implementada.")
-            input("Presione Enter para continuar...")
-
-        elif choice == 3:
-            # Aquí se llamaría a la función para marcar una tarea como completada (del bloque 'crud')
-            print("Funcionalidad de 'Marcar Tarea como Completada' aún no implementada.")
-            input("Presione Enter para continuar...")
-
-        elif choice == 4:
-            print("Saliendo de la aplicación...")
-            break
-
+        display_menu()
+        try:
+            opcion = int(input("Selecciona una opción: "))
+            if opcion == 1:
+                # Aquí iría la lógica para crear una tarea (requiere la integración con 'forms' y 'crud')
+                print("Creando tarea... (implementación pendiente)")
+                input("Presiona Enter para continuar...")
+            elif opcion == 2:
+                # Aquí iría la lógica para listar tareas (requiere la integración con 'tables' y 'crud')
+                print("Listando tareas... (implementación pendiente)")
+                input("Presiona Enter para continuar...")
+            elif opcion == 3:
+                # Aquí iría la lógica para marcar una tarea como completa (requiere la integración con 'crud')
+                print("Marcando tarea como completa... (implementación pendiente)")
+                input("Presiona Enter para continuar...")
+            elif opcion == 4:
+                print("Saliendo...")
+                break
+            else:
+                print("Opción inválida. Intenta de nuevo.")
+                input("Presiona Enter para continuar...")
+        except ValueError:
+            print("Entrada inválida. Por favor, ingresa un número.")
+            input("Presiona Enter para continuar...")
 
 if __name__ == "__main__":
     main()
+
 ```
 
-
-Recuerda que este es solo el *shell/layout*.  Debes integrar las funciones reales para crear, listar y actualizar tareas desde los otros bloques especificados en el plan.  Este código proporciona la estructura para la interfaz de usuario de línea de comandos.
+Este código solo proporciona el `shell/layout`.  La funcionalidad real (crear, listar, marcar tareas) necesita ser implementada utilizando los otros bloques especificados y las dependencias entre ellos.  Recuerda que la autenticación (`auth` y `users`) también debe integrarse para proteger el acceso a la aplicación.

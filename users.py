@@ -1,62 +1,84 @@
-This code represents a basic user model.  Error handling and more robust security measures (like password hashing) would be necessary for a production application.  This example uses a simple in-memory list for demonstration; a real application would use a database (as indicated by the `db` block in the plan).
+This code represents a basic user model and  CRUD (Create, Read, Update, Delete) operations using a dictionary as an in-memory database.  For a production application, you'd want to replace this with a proper database (like PostgreSQL, MySQL, or SQLite) and an ORM (like SQLAlchemy).
 
 ```python
 import uuid
 
 class User:
-    """Represents a user in the system."""
-
     def __init__(self, email, password, nombre):
-        self.id = uuid.uuid4() # Using UUID for better uniqueness than auto-incrementing integer
+        self.id = uuid.uuid4()  # Using UUID for a more robust ID
         self.email = email
-        self.password = password  # Insecure in a real application!  Hash passwords.
+        self.password = password  # In a real application, hash this!
         self.nombre = nombre
 
     def __repr__(self):
-        return f"<User {self.nombre} ({self.email})>"
+        return f"<User(id={self.id}, email={self.email}, nombre={self.nombre})>"
 
 
 class Users:
-    """Manages a list of users."""
-
     def __init__(self):
-        self.users = []  # In-memory list - replace with database interaction
-        self.next_id = 1 #Simulate auto-incrementing id for demonstration
+        self.users = {} # In-memory database. Replace with a real database in production.
+
 
     def create_user(self, email, password, nombre):
-        """Creates a new user."""
         user = User(email, password, nombre)
-        self.users.append(user)
+        self.users[user.id] = user
         return user
 
-    def get_user_by_id(self, user_id):
-      """Retrieves a user by ID."""
-      for user in self.users:
-          if user.id == user_id:
-              return user
-      return None
+    def get_user(self, user_id):
+        return self.users.get(user_id)
 
     def get_user_by_email(self, email):
-        """Retrieves a user by email."""
-        for user in self.users:
+        for user_id, user in self.users.items():
             if user.email == email:
                 return user
         return None
 
+    def update_user(self, user_id, updates):
+        user = self.users.get(user_id)
+        if user:
+            for key, value in updates.items():
+                setattr(user, key, value)
+            return user
+        return None
+
+    def delete_user(self, user_id):
+        if user_id in self.users:
+            del self.users[user_id]
+            return True
+        return False
+
     def list_users(self):
-        """Lists all users."""
-        return self.users
+        return list(self.users.values())
 
 
-# Example usage:
+# Example usage
 users_manager = Users()
 
+# Create users
 user1 = users_manager.create_user("john.doe@example.com", "password123", "John Doe")
 user2 = users_manager.create_user("jane.doe@example.com", "securepass", "Jane Doe")
 
-print(users_manager.list_users())
-print(users_manager.get_user_by_email("john.doe@example.com"))
+# Get user
+retrieved_user = users_manager.get_user(user1.id)
+print(f"Retrieved user: {retrieved_user}")
+
+#Get user by email
+retrieved_user_email = users_manager.get_user_by_email("jane.doe@example.com")
+print(f"Retrieved user by email: {retrieved_user_email}")
+
+#Update user
+users_manager.update_user(user1.id, {"nombre": "John Smith"})
+print(f"Updated user: {users_manager.get_user(user1.id)}")
+
+#List users
+print(f"All users: {users_manager.list_users()}")
+
+
+# Delete user
+users_manager.delete_user(user1.id)
+print(f"User {user1.id} deleted: {users_manager.get_user(user1.id) is None}")
+
 
 ```
 
-Remember to replace the in-memory `users` list with a proper database interaction using a library like SQLAlchemy or similar for a production-ready application.  Also, **never store passwords in plain text**.  Use a strong hashing algorithm like bcrypt or Argon2 to securely store passwords.
+Remember to install any necessary libraries if you are using a database and ORM.  This example provides a functional foundation; security considerations (like password hashing) are crucial for a real-world application.

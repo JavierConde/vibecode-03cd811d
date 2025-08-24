@@ -1,50 +1,27 @@
-This code uses Pydantic for data modeling and an in-memory database for demonstration purposes.  For a production environment, you'd replace `InMemoryDatabase` with a proper database driver like SQLAlchemy or Tortoise ORM.
+This code uses Pydantic for data modeling and an in-memory SQLite database for demonstration.  For a production environment, you would replace `SQLAlchemyInMemoryDatabase` with a persistent database connection (e.g., PostgreSQL, MySQL).
+
 
 ```python
-from typing import List, Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated
+from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-# Simulate an in-memory database (replace with a real database in production)
-class InMemoryDatabase:
-    def __init__(self):
-        self.usuarios = {}
-        self.tareas = {}
-        self.next_usuario_id = 1
-        self.next_tarea_id = 1
-
-    def add_usuario(self, usuario):
-        usuario.id = self.next_usuario_id
-        self.next_usuario_id += 1
-        self.usuarios[usuario.id] = usuario
-        return usuario
-
-    def get_usuario(self, usuario_id):
-        return self.usuarios.get(usuario_id)
-
-    def add_tarea(self, tarea):
-        tarea.id = self.next_tarea_id
-        self.next_tarea_id += 1
-        self.tareas[tarea.id] = tarea
-        return tarea
-
-    def get_tareas_by_usuario(self, usuario_id):
-        return [tarea for tarea in self.tareas.values() if tarea.usuario_id == usuario_id]
-
-
-# Pydantic Models
+# Pydantic models
 class Usuario(BaseModel):
-    id: Annotated[int, Field(ge=1)] = None  #ge=1 en Annotated para evitar 0 como id
+    id: int = Field(..., alias="_id")  #Using alias to avoid naming conflicts with SQLAlchemy
     email: str
     password: str
     nombre: str
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class Tarea(BaseModel):
-    id: Annotated[int, Field(ge=1)] = None #ge=1 en Annotated para evitar 0 como id
+    id: int = Field(..., alias="_id")
     titulo: str
     descripcion: Optional[str] = None
     completada: bool
@@ -52,31 +29,57 @@ class Tarea(BaseModel):
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
-# Example usage
-db = InMemoryDatabase()
+# SQLAlchemy models (for database interaction)
+Base = declarative_base()
 
-# Create a user
-usuario1 = db.add_usuario(Usuario(email="test@example.com", password="password123", nombre="Test User"))
-print(f"Usuario creado: {usuario1}")
+class UsuarioSQLAlchemy(Base):
+    __tablename__ = "usuarios"
+    id = Column(Integer, primary_key=True)
+    email = Column(String)
+    password = Column(String)
+    nombre = Column(String)
 
-# Create tasks for the user
-tarea1 = db.add_tarea(Tarea(titulo="Tarea 1", descripcion="Descripción de la tarea 1", completa:False, usuario_id=usuario1.id))
-tarea2 = db.add_tarea(Tarea(titulo="Tarea 2", completa:True, usuario_id=usuario1.id))
-print(f"Tareas creadas: {tarea1}, {tarea2}")
+class TareaSQLAlchemy(Base):
+    __tablename__ = "tareas"
+    id = Column(Integer, primary_key=True)
+    titulo = Column(String)
+    descripcion = Column(String)
+    completada = Column(Boolean)
+    usuario_id = Column(Integer)
 
-# Retrieve tasks for the user
-tareas_usuario1 = db.get_tareas_by_usuario(usuario1.id)
-print(f"Tareas del usuario {usuario1.id}: {tareas_usuario1}")
+
+# In-memory SQLite database setup (for demonstration)
+engine = create_engine("sqlite:///:memory:")
+Base.metadata.create_all(engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-#Retrieve a user
-retrieved_user = db.get_usuario(usuario1.id)
-print(f"Usuario recuperado: {retrieved_user}")
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# Example usage (add some data)
+with SessionLocal() as db:
+    db.add(UsuarioSQLAlchemy(email="test@example.com", password="password", nombre="Test User"))
+    db.add(TareaSQLAlchemy(titulo="Tarea 1", descripcion="Descripción de la tarea 1", completada=False, usuario_id=1))
+    db.commit()
+
+#Example of retrieving data using SQLAlchemy and converting to Pydantic model
+with SessionLocal() as db:
+    usuarios_db = db.query(UsuarioSQLAlchemy).all()
+    usuarios_pydantic = [Usuario.from_orm(user) for user in usuarios_db]
+    print(usuarios_pydantic)
 
 ```
 
-Remember to install `pydantic` :  `pip install pydantic`
+Remember to install the necessary libraries: `pip install fastapi uvicorn sqlalchemy pydantic`
 
-This example provides a basic structure. For a real-world application, you would need a persistent database (like PostgreSQL, MySQL, SQLite) and a more robust ORM (like SQLAlchemy or Tortoise ORM) to manage database interactions.  The `orm_mode = True` in the Pydantic models is crucial for easy interaction with ORMs.
+
+This improved example includes both Pydantic models for data validation and serialization and SQLAlchemy models for database interaction, along with a simple in-memory database for testing.  You'll need to adapt the database connection string for your chosen persistent database.  The example also shows how to get data from the database and convert it into Pydantic models.

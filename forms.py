@@ -1,50 +1,50 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
+from typing import Optional
 
-class UsuarioBase(BaseModel):
-    email: EmailStr
-    password: str
-    nombre: str
-
-class UsuarioCreate(UsuarioBase):
-    pass
-
-class Usuario(UsuarioBase):
-    id: int
-
-    class Config:
-        orm_mode = True
+class Usuario(BaseModel):
+    id: Optional[int] = None  # Optional for creation
+    email: str = Field(..., min_length=5, max_length=100) # ... indicates required field
+    password: str = Field(..., min_length=8)
+    nombre: str = Field(..., max_length=100)
 
 
-class TareaBase(BaseModel):
-    titulo: str
-    descripcion: str
+class Tarea(BaseModel):
+    id: Optional[int] = None  # Optional for creation
+    titulo: str = Field(..., max_length=255)
+    descripcion: Optional[str] = None
     completada: bool = False
-    usuario_id: int
+    usuario_id: int = Field(..., ge=1) # ge=1 ensures a positive integer
 
-class TareaCreate(TareaBase):
-    pass
 
-class Tarea(TareaBase):
-    id: int
+class TareaCreate(BaseModel): # Separate model for creation to omit id
+    titulo: str = Field(..., max_length=255)
+    descripcion: Optional[str] = None
+    completada: bool = False
+    usuario_id: int = Field(..., ge=1)
 
-    class Config:
-        orm_mode = True
+
+class UsuarioUpdate(BaseModel): #Model for partial updates, all fields are optional
+    email: Optional[str] = None
+    password: Optional[str] = None
+    nombre: Optional[str] = None
+
+class TareaUpdate(BaseModel): #Model for partial updates, all fields are optional
+    titulo: Optional[str] = None
+    descripcion: Optional[str] = None
+    completada: Optional[bool] = None
+
 
 ```
 
 This code defines several Pydantic models:
 
-* **`UsuarioBase`**:  A base model for users, containing the common fields `email`, `password`, and `nombre`.  `EmailStr` ensures email validation.
+* **`Usuario`:**  Represents a user with `id`, `email`, `password`, and `nombre` fields.  `id` is optional (for creating new users).  Email and password have basic validation.
 
-* **`UsuarioCreate`**:  Inherits from `UsuarioBase`.  Used for creating new users.  No extra fields are needed here as all fields are required for creation.
+* **`Tarea`:** Represents a task with `id`, `titulo`, `descripcion`, `completada`, and `usuario_id` fields.  `id` is optional.  `usuario_id` is validated to be a positive integer.
 
-* **`Usuario`**: Inherits from `UsuarioBase` and adds an `id` field.  The `class Config: orm_mode = True` is crucial for compatibility with ORMs like SQLAlchemy, allowing direct conversion from database objects to Pydantic models.
+* **`TareaCreate`:** A separate model for creating tasks. This omits the `id` field as it's automatically generated.
 
-* **`TareaBase`**: A base model for tasks, containing `titulo`, `descripcion`, `completada` (with a default value of `False`), and `usuario_id`.
-
-* **`TareaCreate`**: Inherits from `TareaBase`. Used for creating new tasks.
-
-* **`Tarea`**: Inherits from `TareaBase` and adds an `id` field.  `orm_mode = True` is included for ORM compatibility.
+* **`UsuarioUpdate` and `TareaUpdate`:**  Models specifically for partial updates. All fields are optional, allowing updates of only specific attributes.
 
 
-These models are designed for clear separation of concerns and efficient use with FastAPI.  `UsuarioCreate` and `TareaCreate` are specifically for creating new entries, while `Usuario` and `Tarea` are used for representing existing entries, potentially retrieved from a database.  The inclusion of `orm_mode = True` is important for seamless integration with database operations.
+This approach improves code organization and clarity, especially when handling create and update operations separately.  The validation built into Pydantic enhances data integrity. Remember to install Pydantic:  `pip install pydantic`
