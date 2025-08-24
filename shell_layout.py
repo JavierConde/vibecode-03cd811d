@@ -1,74 +1,79 @@
-Este código proporciona una estructura básica para un layout de shell en una aplicación de línea de comandos en Python.  Se centra en la presentación de la información y la interacción básica con el usuario, dejando la lógica de negocio a otros bloques (como `auth`, `users`, `crud`).  No incluye manejo de errores sofisticado ni validación de entrada.
+Este código proporciona una estructura básica para un layout de shell en una aplicación de línea de comandos.  Asumiendo que tienes otros módulos (auth, users, db, crud, forms, tables) ya implementados, este código se integraría con ellos.  Necesitarás adaptarlo a tu implementación específica de esos módulos.
 
 ```python
 import os
-import platform
+import sys
+from prompt_toolkit import prompt
+from prompt_toolkit.shortcuts import clear
+from prompt_toolkit.styles import Style
+
+# Estilo para la interfaz de la linea de comandos
+style = Style.from_dict({
+    "title": "bg:#000080 #ffffff",
+    "menu": "bg:#004080 #ffffff",
+    "option": "bg:#006080 #ffffff",
+    "selected": "bg:#008080 #000000",
+})
 
 def clear_screen():
-    """Limpia la pantalla de la consola."""
-    if platform.system() == "Windows":
-        os.system("cls")
-    else:
-        os.system("clear")
-
-def display_header(title):
-    """Muestra un encabezado en la consola."""
-    clear_screen()
-    print("-" * 50)
-    print(f"  {title.center(46)}")
-    print("-" * 50)
-    print()
-
+    """Limpia la pantalla de la terminal."""
+    clear()
 
 def display_menu(options):
-    """Muestra un menú de opciones."""
+    """Muestra el menú de opciones."""
+    clear_screen()
+    print("\n\t--- Menú de Tareas ---\n")
     for i, option in enumerate(options):
-        print(f"{i+1}. {option}")
-    print()
+        selected_style = "selected" if i == 0 else "option" #Highlight the first option
+        print(f"\t[{i+1}] {option[0]}") # Assuming options is a list of (description, function) tuples
 
 
-def get_user_choice(num_options):
-    """Obtiene la elección del usuario."""
+def get_user_choice(options):
+    """Obtiene la opción elegida por el usuario."""
     while True:
         try:
-            choice = int(input("Elige una opción: "))
-            if 1 <= choice <= num_options:
-                return choice
+            choice = int(prompt(f"\nElige una opción (1-{len(options)}): ", style=style))
+            if 1 <= choice <= len(options):
+                return choice - 1
             else:
-                print("Opción inválida. Por favor, elige un número del menú.")
+                print("Opción inválida. Intenta de nuevo.")
         except ValueError:
-            print("Entrada inválida. Por favor, introduce un número.")
+            print("Entrada inválida. Ingresa un número.")
 
 
-def main():
-    """Función principal de la shell."""
+def run_shell():
+    """Corre el shell de la aplicación."""
+    options = [
+        ("Crear Tarea", lambda: crear_tarea()), #Reemplazar con la función de crear tarea
+        ("Listar Tareas", lambda: listar_tareas()), #Reemplazar con la función de listar tareas
+        ("Marcar Completada", lambda: marcar_completada()), #Reemplazar con la función de marcar como completada
+        ("Salir", lambda: sys.exit(0)),
+    ]
+
     while True:
-        display_header("Aplicación de Lista de Tareas")
-        display_menu(["Crear Tarea", "Listar Tareas", "Marcar como Completada", "Salir"])
-        choice = get_user_choice(4)
+        display_menu(options)
+        choice = get_user_choice(options)
+        options[choice][1]()  # Ejecutar la función seleccionada
 
-        if choice == 1:
-            # Aquí iría la lógica para crear una tarea (llamando a otros bloques)
-            print("Crear Tarea (Bloque CRUD necesario)")
-            input("Presiona Enter para continuar...")
 
-        elif choice == 2:
-            # Aquí iría la lógica para listar tareas (llamando a otros bloques)
-            print("Listar Tareas (Bloque CRUD necesario)")
-            input("Presiona Enter para continuar...")
+def crear_tarea():
+    """Implementacion de crear tarea.  Reemplazar con tu lógica."""
+    print("Implementa la función para crear una tarea aquí.")
+    input("Presiona Enter para continuar...")
 
-        elif choice == 3:
-            # Aquí iría la lógica para marcar como completada (llamando a otros bloques)
-            print("Marcar como Completada (Bloque CRUD necesario)")
-            input("Presiona Enter para continuar...")
+def listar_tareas():
+    """Implementacion de listar tarea.  Reemplazar con tu lógica."""
+    print("Implementa la función para listar tareas aquí.")
+    input("Presiona Enter para continuar...")
 
-        elif choice == 4:
-            print("Saliendo...")
-            break
-
+def marcar_completada():
+    """Implementacion de marcar como completa.  Reemplazar con tu lógica."""
+    print("Implementa la función para marcar una tarea como completada aquí.")
+    input("Presiona Enter para continuar...")
 
 if __name__ == "__main__":
-    main()
+    run_shell()
+
 ```
 
-Recuerda que este código es solo el layout de la shell.  Necesitarás integrar la funcionalidad usando otros bloques como `auth`, `users`, `crud`, `forms` y `tables` para completar la aplicación.  Este código proporciona la interfaz básica de usuario en la consola.
+Recuerda que este código solo proporciona la estructura del shell. Necesitas implementar la lógica para la creación, listado y marcado de tareas usando tus módulos `auth`, `users`, `db`, `crud`, `forms`, y `tables`.  Las funciones `crear_tarea`, `listar_tareas`, y `marcar_completada` son solo marcadores de posición y deben ser reemplazadas con tu código funcional.  También necesitarás instalar `prompt_toolkit`:  `pip install prompt_toolkit`

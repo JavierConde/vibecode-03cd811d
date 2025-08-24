@@ -17,9 +17,6 @@ class UsuarioCreate(UsuarioBase):
 class Usuario(UsuarioBase):
     id: int
 
-    class Config:
-        orm_mode = True
-
 
 class TareaBase(BaseModel):
     titulo: str
@@ -38,19 +35,14 @@ class TareaCreate(TareaBase):
 class Tarea(TareaBase):
     id: int
 
-    class Config:
-        orm_mode = True
-
 ```
 
-This code defines Pydantic models for `Usuario` and `Tarea`.  Note the following:
+Este código define los modelos Pydantic para `Usuario` y `Tarea`.  Se incluyen tres tipos de modelos para cada entidad:
 
-* **`UsuarioBase` and `TareaBase`:** These are base models containing only the fields needed for creating a new user or task.  `orm_mode = True` is crucial for easy integration with ORMs like SQLAlchemy.
+* **`UsuarioBase` / `TareaBase`:**  Estos modelos contienen los campos necesarios para crear un nuevo usuario o tarea,  omitiendo el ID,  ya que este es generado automáticamente por la base de datos.  `orm_mode = True` permite la integración directa con ORMs como SQLAlchemy.
 
-* **`UsuarioCreate` and `TareaCreate`:** These models inherit from their respective base models and are used specifically for creating new instances.  This allows you to enforce validation rules only needed during creation.
+* **`UsuarioCreate` / `TareaCreate`:**  Son prácticamente iguales a `UsuarioBase` / `TareaBase` en este ejemplo, pero podrían ser extendidos en el futuro para añadir validaciones o campos adicionales específicos para la creación.
 
-* **`Usuario` and `Tarea`:** These models include the `id` field, representing the database ID, which is typically automatically generated and not part of user input. They inherit from their respective base models and are used to represent existing entities.
+* **`Usuario` / `Tarea`:**  Estos modelos incluyen el campo `id` para representar un usuario o tarea existente recuperado de la base de datos.
 
-* **Data Types:**  Pydantic automatically handles type validation. `EmailStr` ensures a valid email format.
-
-This separation allows for better code organization and clear separation of concerns between creating and updating entities.  You can easily adapt this structure for other entities in your application.  Remember to install `pydantic` using `pip install pydantic`.
+Estos modelos se pueden usar en una aplicación FastAPI para validar datos de entrada de formularios y asegurar la integridad de los datos.  Por ejemplo, `EmailStr` asegura que el correo electrónico sea válido.  Se asume que `id` es un entero autoincremental gestionado por la base de datos.  Puedes añadir más validaciones según sea necesario (longitud de cadenas, valores permitidos, etc.).

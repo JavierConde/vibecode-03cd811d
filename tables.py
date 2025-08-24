@@ -1,71 +1,38 @@
-This code provides a basic table representation of the `Tarea` data.  It doesn't include database interaction or UI elements, focusing solely on the table generation aspect specified in the "tables" block.  A real-world application would need to integrate this with a database (as indicated by the `db` block dependency) and a UI framework.
+Este código Python proporciona una función básica para mostrar una tabla de tareas.  Se asume que ya tienes una lista de diccionarios, donde cada diccionario representa una tarea con los campos 'id', 'titulo', 'descripcion', y 'completada'.  Necesitarás adaptar este código a tu implementación de base de datos y lógica de autenticación descrita en el resto del plan.
 
 ```python
-from typing import List, Dict, Any
+def mostrar_tabla_tareas(tareas):
+    """
+    Muestra una tabla de tareas en la consola.
 
-class Tarea:
-    def __init__(self, id: int, titulo: str, descripcion: str, completada: bool, usuario_id: int):
-        self.id = id
-        self.titulo = titulo
-        self.descripcion = descripcion
-        self.completada = completada
-        self.usuario_id = usuario_id
-
-    def __str__(self):
-        return f"ID: {self.id}, Título: {self.titulo}, Completada: {self.completada}"
-
-
-def generate_tarea_table(tareas: List[Tarea]) -> str:
-    """Generates a formatted table of Tarea objects."""
+    Args:
+        tareas: Una lista de diccionarios, donde cada diccionario representa una tarea 
+               con los campos 'id', 'titulo', 'descripcion', y 'completada'.
+    """
 
     if not tareas:
-        return "No hay tareas."
+        print("No hay tareas para mostrar.")
+        return
 
-    # Determine column widths for better formatting
-    column_widths = {
-        "ID": len("ID"),
-        "Título": len("Título"),
-        "Descripción": len("Descripción"),
-        "Completada": len("Completada"),
-        "Usuario ID": len("Usuario ID"),
-    }
+    # Encabezados de la tabla
+    encabezados = ["ID", "Título", "Descripción", "Completada"]
+    print("{:<5} {:<20} {:<30} {:<10}".format(*encabezados))  # Formato de la tabla
+    print("-" * 75)  # Línea separadora
 
+    # Filas de la tabla
     for tarea in tareas:
-        column_widths["ID"] = max(column_widths["ID"], len(str(tarea.id)))
-        column_widths["Título"] = max(column_widths["Título"], len(tarea.titulo))
-        column_widths["Descripción"] = max(column_widths["Descripción"], len(tarea.descripcion))
-        column_widths["Completada"] = max(column_widths["Completada"], len(str(tarea.completada)))
-        column_widths["Usuario ID"] = max(column_widths["Usuario ID"], len(str(tarea.usuario_id)))
+        completada = "Sí" if tarea['completada'] else "No"
+        print("{:<5} {:<20} {:<30} {:<10}".format(tarea['id'], tarea['titulo'], tarea['descripcion'], completada))
 
-
-    header = "|".join([f"{col:{width}}" for col, width in column_widths.items()])
-    separator = "+".join(["-" * width for width in column_widths.values()])
-
-    table = [header, separator]
-
-    for tarea in tareas:
-        row = "|".join([
-            f"{tarea.id:{column_widths['ID']}}",
-            f"{tarea.titulo:{column_widths['Título']}}",
-            f"{tarea.descripcion:{column_widths['Descripción']}}",
-            f"{tarea.completada:{column_widths['Completada']}}",
-            f"{tarea.usuario_id:{column_widths['Usuario ID']}}",
-        ])
-        table.append(row)
-
-
-    return "\n".join(table)
-
-
-# Example usage
+# Ejemplo de uso:
 tareas_ejemplo = [
-    Tarea(1, "Comprar leche", "Ir al supermercado y comprar leche", True, 1),
-    Tarea(2, "Pagar facturas", "Pagar las facturas pendientes de este mes", False, 1),
-    Tarea(3, "Enviar correo", "Enviar correo a Juan Pérez", True, 2),
+    {'id': 1, 'titulo': 'Comprar leche', 'descripcion': 'Ir al supermercado y comprar leche', 'completada': True},
+    {'id': 2, 'titulo': 'Pagar facturas', 'descripcion': 'Pagar las facturas pendientes', 'completada': False},
+    {'id': 3, 'titulo': 'Llamar a Juan', 'descripcion': 'Llamar a Juan para coordinar la reunión', 'completada': False}
 ]
 
-print(generate_tarea_table(tareas_ejemplo))
+mostrar_tabla_tareas(tareas_ejemplo)
 
 ```
 
-This improved version handles variable-length data in the table columns more gracefully, providing a cleaner output.  Remember that this is just the table generation; database interaction and UI integration would be separate components.
+Este código solo muestra la tabla en la consola.  Para una interfaz de usuario más sofisticada, deberías considerar usar una librería como `rich` para una mejor presentación o integrar esto con una interfaz gráfica de usuario (GUI) usando librerías como `Tkinter`, `PyQt`, o frameworks web como `Flask` o `Django`.  Recuerda que este ejemplo necesita ser integrado con tu bloque `db` y `crud` para obtener los datos de la base de datos.

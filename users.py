@@ -1,19 +1,19 @@
-Este código representa un bloque de funcionalidad `users` para una aplicación de lista de tareas.  Utiliza una base de datos en memoria para simplicidad, pero se puede adaptar fácilmente a bases de datos reales como PostgreSQL o SQLite.  Se omite la autenticación (`auth` block) para enfocarse en la gestión de usuarios.
+Este código representa un bloque `users` básico en Python.  Se enfoca en la gestión de usuarios,  asumiendo que la autenticación (bloque `auth`) y la base de datos (bloque `db`) ya están implementados y accesibles.  Necesitará adaptar este código a tu implementación específica de la base de datos.  Este ejemplo utiliza una lista en memoria para simplicidad,  pero en una aplicación real,  debería usar una base de datos como SQLite, PostgreSQL, etc.
 
 ```python
-import uuid
+import uuid #Para generar IDs únicos si no se usa una base de datos que los maneje
 
 class User:
     def __init__(self, email, password, nombre):
-        self.id = uuid.uuid4()  # Usar UUID para IDs únicos
+        self.id = uuid.uuid4()  # Usar un UUID como ID único
         self.email = email
-        self.password = password # En una aplicación real, esto debería ser hasheado
+        self.password = password  #En una aplicación real, usar hash seguro
         self.nombre = nombre
 
-class UsersBlock:
+class Users:
     def __init__(self):
+        # En una aplicación real, esto sería una conexión a la base de datos
         self.users = []
-        self.next_id = 1  # Si se necesita un ID numérico secuencial
 
     def create_user(self, email, password, nombre):
         user = User(email, password, nombre)
@@ -22,7 +22,7 @@ class UsersBlock:
 
     def get_user_by_id(self, user_id):
         for user in self.users:
-            if str(user.id) == str(user_id): # Comparación de strings para UUIDs
+            if user.id == user_id:
                 return user
         return None
 
@@ -32,45 +32,25 @@ class UsersBlock:
                 return user
         return None
 
+
     def get_all_users(self):
         return self.users
 
-    def update_user(self, user_id, email=None, password=None, nombre=None):
-        user = self.get_user_by_id(user_id)
-        if user:
-            if email: user.email = email
-            if password: user.password = password # En una aplicación real, esto debería ser hasheado
-            if nombre: user.nombre = nombre
-            return user
-        return None
-
-    def delete_user(self, user_id):
-        user = self.get_user_by_id(user_id)
-        if user:
-            self.users.remove(user)
-            return True
-        return False
+    #En una aplicación real, agregar métodos para actualizar y eliminar usuarios.
 
 
-# Ejemplo de uso:
-users_block = UsersBlock()
+#Ejemplo de uso:
+users_manager = Users()
+user1 = users_manager.create_user("user1@example.com", "password123", "Usuario 1")
+user2 = users_manager.create_user("user2@example.com", "securepass", "Usuario 2")
 
-# Crear usuarios
-user1 = users_block.create_user("usuario1@example.com", "password123", "Usuario Uno")
-user2 = users_block.create_user("usuario2@example.com", "pass456", "Usuario Dos")
+print(f"Usuario 1 ID: {user1.id}")
+retrieved_user = users_manager.get_user_by_email("user1@example.com")
+print(f"Usuario recuperado por email: {retrieved_user.nombre}")
 
-# Obtener usuarios
-print(f"Usuario 1: {user1.nombre}, ID: {user1.id}")
-print(f"Todos los usuarios: {[user.nombre for user in users_block.get_all_users()]}")
-
-# Actualizar un usuario
-users_block.update_user(str(user1.id), nombre="Usuario Actualizado")
-print(f"Usuario 1 actualizado: {users_block.get_user_by_id(str(user1.id)).nombre}")
-
-# Eliminar un usuario
-users_block.delete_user(str(user2.id))
-print(f"Usuarios restantes: {[user.nombre for user in users_block.get_all_users()]}")
-
+all_users = users_manager.get_all_users()
+for user in all_users:
+    print(f"ID: {user.id}, Nombre: {user.nombre}, Email: {user.email}")
 ```
 
-Este código proporciona las funciones básicas de creación, lectura, actualización y eliminación (CRUD) de usuarios.  Recuerda que para una aplicación en producción, necesitas implementar  seguridad adecuada (hashing de contraseñas, salting, etc.) y una base de datos persistente.
+Recuerda que este es un ejemplo simplificado. Una implementación robusta requerirá manejo de errores, validación de datos, seguridad (hashing de contraseñas, salting, etc.), y  la integración con una base de datos real.  La seguridad de las contraseñas es crucial y no debe almacenarse en texto plano.  Considera usar bibliotecas como `bcrypt` o `scrypt` para el hashing seguro de contraseñas.
