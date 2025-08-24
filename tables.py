@@ -1,60 +1,50 @@
-Este código proporciona una función básica para mostrar una tabla de tareas en formato de texto.  Necesitaría una base de datos y un sistema de persistencia para funcionar con datos reales.  Para una aplicación completa, se recomendaría usar un framework como Flask o Django con una base de datos como PostgreSQL o SQLite.
+Este código proporciona una función para generar una tabla HTML que representa la lista de tareas.  Asume que se recibe una lista de diccionarios, donde cada diccionario representa una tarea con los campos 'titulo', 'descripcion', y 'completada'.  Necesitará una librería para manejar HTML, como `html` o `BeautifulSoup`, pero este ejemplo es lo suficientemente simple como para no necesitarlas para una representación básica.
 
 ```python
-from typing import List, Dict, Tuple
-
-def display_tasks_table(tasks: List[Dict]) -> None:
-    """
-    Displays a table of tasks in the console.
+def generate_task_table(tasks):
+    """Genera una tabla HTML para mostrar una lista de tareas.
 
     Args:
-        tasks: A list of dictionaries, where each dictionary represents a task 
-               and contains at least 'titulo', 'descripcion', and 'completada' keys.
+        tasks: Una lista de diccionarios, donde cada diccionario representa una tarea 
+               con los campos 'titulo', 'descripcion', y 'completada'.
+
+    Returns:
+        Una cadena de texto que contiene el código HTML de la tabla.  Retorna una cadena vacía si la lista de tareas está vacía.
     """
 
     if not tasks:
-        print("No hay tareas.")
-        return
+        return ""
 
-    # Obtener el ancho máximo de cada columna para el formateo
-    column_widths = get_column_widths(tasks)
+    table_html = "<table>\n"
+    table_html += "<thead><tr><th>Título</th><th>Descripción</th><th>Completada</th></tr></thead>\n"
+    table_html += "<tbody>\n"
 
-    # Imprimir encabezado
-    print_table_row(["Título", "Descripción", "Completada"], column_widths)
-    print("-" * (sum(column_widths) + 3 * len(column_widths))) # Linea separadora
-
-    # Imprimir filas de tareas
     for task in tasks:
-        row = [task['titulo'], task['descripcion'], "Sí" if task['completada'] else "No"]
-        print_table_row(row, column_widths)
+        completed_status = "Sí" if task['completada'] else "No"
+        table_html += f"<tr><td>{task['titulo']}</td><td>{task['descripcion']}</td><td>{completed_status}</td></tr>\n"
 
-
-def get_column_widths(tasks: List[Dict]) -> Tuple[int, int, int]:
-    """
-    Calculates the maximum width of each column for formatting the table.
-    """
-    max_titulo_width = max(len(task['titulo']) for task in tasks)
-    max_descripcion_width = max(len(task['descripcion']) for task in tasks)
-    max_completada_width = max(len("Sí"), len("No")) #Ancho de la columna "Completada"
-    return max_titulo_width, max_descripcion_width, max_completada_width
-
-
-def print_table_row(row: List[str], column_widths: Tuple[int, int, int]) -> None:
-    """Prints a single row of the table with proper formatting."""
-    format_string = "{:<" + str(column_widths[0]) + "} | {:<" + str(column_widths[1]) + "} | {:<" + str(column_widths[2]) + "}"
-    print(format_string.format(*row))
-
+    table_html += "</tbody>\n"
+    table_html += "</table>"
+    return table_html
 
 
 # Ejemplo de uso:
 tasks_data = [
-    {'id': 1, 'titulo': 'Comprar leche', 'descripcion': 'Comprar una galona de leche descremada', 'completada': False},
-    {'id': 2, 'titulo': 'Pasear al perro', 'descripcion': 'Sacar a pasear a Fido por 30 minutos', 'completada': True},
-    {'id': 3, 'titulo': 'Tarea larga', 'descripcion': 'Esta es una tarea con una descripción mucho más larga que las otras', 'completada': False}
+    {'titulo': 'Tarea 1', 'descripcion': 'Descripción de la tarea 1', 'completada': True},
+    {'titulo': 'Tarea 2', 'descripcion': 'Descripción de la tarea 2', 'completada': False},
+    {'titulo': 'Tarea 3', 'descripcion': 'Descripción de la tarea 3', 'completada': True}
 ]
 
-display_tasks_table(tasks_data)
+html_table = generate_task_table(tasks_data)
+print(html_table)
+
+# Para usar con una librería HTML:
+# from html import escape # Para evitar problemas con caracteres especiales
+
+# ... dentro de la función generate_task_table ...
+# table_html += f"<tr><td>{escape(task['titulo'])}</td><td>{escape(task['descripcion'])}</td><td>{completed_status}</td></tr>\n"
+# ...
 
 ```
 
-Este código  es más robusto y maneja diferentes longitudes de texto en las columnas de la tabla.  Recuerda que esto solo muestra la tabla;  la obtención y gestión de datos desde una base de datos requeriría código adicional.
+Este código genera una tabla HTML básica.  Para una aplicación real,  se debería considerar el uso de un framework web como Flask o Django para manejar la generación del HTML y la interacción con el usuario, así como una base de datos para persistir los datos.  Además,  la función `escape` de la librería `html` se recomienda para prevenir vulnerabilidades XSS al mostrar datos de usuario en el HTML.

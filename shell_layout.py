@@ -1,60 +1,79 @@
-Este código proporciona una estructura básica para la interfaz de línea de comandos.  Necesitará implementar la lógica de las funciones `mostrar_menu`, `crear_tarea`, `listar_tareas`, etc., utilizando los otros bloques ("auth", "users", "db", "crud", "forms", "tables") que se mencionan en el plan.  Este ejemplo asume que ya tiene esas funciones implementadas y disponibles.
+Este código proporciona una estructura básica de shell/layout para una aplicación de línea de comandos en Python.  Se puede extender para incluir funcionalidades más avanzadas, como menús interactivos y manejo de errores más robusto.  Necesitará ser integrado con los otros bloques (auth, users, db, crud, forms, tables) para formar la aplicación completa.
 
 ```python
 import os
+import sys
 
-def limpiar_pantalla():
+def clear_screen():
     """Limpia la pantalla de la consola."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def mostrar_menu():
-    """Muestra el menú principal de la aplicación."""
-    limpiar_pantalla()
-    print("Aplicación de Lista de Tareas")
-    print("1. Crear tarea")
-    print("2. Listar tareas")
-    print("3. Marcar tarea como completada")
-    print("4. Salir")
-    return input("Seleccione una opción: ")
+def display_header(title):
+    """Muestra un encabezado en la consola."""
+    clear_screen()
+    print("-" * 40)
+    print(f"  {title.center(36)}")
+    print("-" * 40)
+    print()
 
-def crear_tarea():
-    """Crea una nueva tarea (implementar la lógica con 'forms' y 'db')."""
-    # Implementación usando las funciones de forms y db
-    print("Crear tarea (implementación pendiente)")
-    input("Presione Enter para continuar...")
 
-def listar_tareas():
-    """Lista las tareas del usuario (implementar la lógica con 'tables' y 'db')."""
-    # Implementación usando las funciones de tables y db
-    print("Listar tareas (implementación pendiente)")
-    input("Presione Enter para continuar...")
+def display_menu(options):
+    """Muestra un menú de opciones en la consola."""
+    for i, option in enumerate(options):
+        print(f"{i+1}. {option}")
+    print()
 
-def marcar_completada():
-    """Marca una tarea como completada (implementar la lógica con 'db')."""
-    # Implementación usando las funciones de db
-    print("Marcar tarea como completada (implementación pendiente)")
-    input("Presione Enter para continuar...")
+
+def get_user_choice(num_options):
+    """Obtiene la opción del usuario y valida la entrada."""
+    while True:
+        try:
+            choice = int(input("Ingrese su opción: "))
+            if 1 <= choice <= num_options:
+                return choice
+            else:
+                print("Opción inválida. Por favor, intente de nuevo.")
+        except ValueError:
+            print("Entrada inválida. Por favor, ingrese un número.")
 
 
 def main():
-    """Bucle principal de la aplicación."""
+    """Función principal de la aplicación."""
+
     while True:
-        opcion = mostrar_menu()
-        if opcion == '1':
-            crear_tarea()
-        elif opcion == '2':
-            listar_tareas()
-        elif opcion == '3':
-            marcar_completada()
-        elif opcion == '4':
-            print("Saliendo...")
-            break
-        else:
-            print("Opción inválida. Intente de nuevo.")
+        display_header("Aplicación de Lista de Tareas")
+        display_menu([
+            "Crear Tarea",
+            "Listar Tareas",
+            "Marcar Tarea como Completada",
+            "Salir"
+        ])
+
+        choice = get_user_choice(4)
+
+        if choice == 1:
+            # Aquí se llamaría a la función para crear una tarea (del bloque 'crud' y 'forms')
+            print("Funcionalidad de 'Crear Tarea' aún no implementada.")
             input("Presione Enter para continuar...")
+
+        elif choice == 2:
+            # Aquí se llamaría a la función para listar tareas (del bloque 'crud' y 'tables')
+            print("Funcionalidad de 'Listar Tareas' aún no implementada.")
+            input("Presione Enter para continuar...")
+
+        elif choice == 3:
+            # Aquí se llamaría a la función para marcar una tarea como completada (del bloque 'crud')
+            print("Funcionalidad de 'Marcar Tarea como Completada' aún no implementada.")
+            input("Presione Enter para continuar...")
+
+        elif choice == 4:
+            print("Saliendo de la aplicación...")
+            break
+
 
 if __name__ == "__main__":
     main()
 ```
 
-Recuerda que este código es un esqueleto.  Necesitas completar la funcionalidad de las funciones `crear_tarea`, `listar_tareas` y `marcar_completada` integrando los demás bloques funcionales de tu aplicación.  La interacción con la base de datos ("db") y la gestión de formularios ("forms") y tablas ("tables") son cruciales para completar la funcionalidad.  También deberás considerar la autenticación ("auth") y la gestión de usuarios ("users").
+
+Recuerda que este es solo el *shell/layout*.  Debes integrar las funciones reales para crear, listar y actualizar tareas desde los otros bloques especificados en el plan.  Este código proporciona la estructura para la interfaz de usuario de línea de comandos.

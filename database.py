@@ -1,82 +1,82 @@
-This code uses Pydantic for data validation and modeling, and SQLAlchemy for database interaction with an in-memory SQLite database for demonstration purposes.  For a production environment, you would replace the `sqlite:///:memory:` URL with your database connection string.
-
+This code uses Pydantic for data modeling and an in-memory database for demonstration purposes.  For a production environment, you'd replace `InMemoryDatabase` with a proper database driver like SQLAlchemy or Tortoise ORM.
 
 ```python
-import sqlalchemy as sa
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from typing import List, Optional
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
-# SQLAlchemy setup
-Base = declarative_base()
+# Simulate an in-memory database (replace with a real database in production)
+class InMemoryDatabase:
+    def __init__(self):
+        self.usuarios = {}
+        self.tareas = {}
+        self.next_usuario_id = 1
+        self.next_tarea_id = 1
 
-class Usuario(Base):
-    __tablename__ = "usuarios"
-    id = sa.Column(sa.Integer, primary_key=True)
-    email = sa.Column(sa.String, unique=True, nullable=False)
-    password = sa.Column(sa.String, nullable=False)
-    nombre = sa.Column(sa.String, nullable=False)
+    def add_usuario(self, usuario):
+        usuario.id = self.next_usuario_id
+        self.next_usuario_id += 1
+        self.usuarios[usuario.id] = usuario
+        return usuario
 
-class Tarea(Base):
-    __tablename__ = "tareas"
-    id = sa.Column(sa.Integer, primary_key=True)
-    titulo = sa.Column(sa.String, nullable=False)
-    descripcion = sa.Column(sa.String)
-    completada = sa.Column(sa.Boolean, default=False)
-    usuario_id = sa.Column(sa.Integer, sa.ForeignKey("usuarios.id"))
+    def get_usuario(self, usuario_id):
+        return self.usuarios.get(usuario_id)
+
+    def add_tarea(self, tarea):
+        tarea.id = self.next_tarea_id
+        self.next_tarea_id += 1
+        self.tareas[tarea.id] = tarea
+        return tarea
+
+    def get_tareas_by_usuario(self, usuario_id):
+        return [tarea for tarea in self.tareas.values() if tarea.usuario_id == usuario_id]
 
 
-# Pydantic models
-class UsuarioPydantic(BaseModel):
-    id: int
-    email: str = Field(..., min_length=3, max_length=100)
-    password: str = Field(..., min_length=8)  #Should be hashed in a real application
-    nombre: str = Field(..., min_length=2, max_length=50)
+# Pydantic Models
+class Usuario(BaseModel):
+    id: Annotated[int, Field(ge=1)] = None  #ge=1 en Annotated para evitar 0 como id
+    email: str
+    password: str
+    nombre: str
 
     class Config:
         orm_mode = True
 
 
-class TareaPydantic(BaseModel):
-    id: int
-    titulo: str = Field(..., min_length=3, max_length=100)
-    descripcion: str | None = None
-    completada: bool = False
+class Tarea(BaseModel):
+    id: Annotated[int, Field(ge=1)] = None #ge=1 en Annotated para evitar 0 como id
+    titulo: str
+    descripcion: Optional[str] = None
+    completada: bool
     usuario_id: int
 
     class Config:
         orm_mode = True
 
 
-# Database connection (in-memory SQLite for demonstration)
-engine = sa.create_engine("sqlite:///:memory:")
-Base.metadata.create_all(engine)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Example usage
+db = InMemoryDatabase()
 
-# Example usage:
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Create a user
+usuario1 = db.add_usuario(Usuario(email="test@example.com", password="password123", nombre="Test User"))
+print(f"Usuario creado: {usuario1}")
+
+# Create tasks for the user
+tarea1 = db.add_tarea(Tarea(titulo="Tarea 1", descripcion="Descripción de la tarea 1", completa:False, usuario_id=usuario1.id))
+tarea2 = db.add_tarea(Tarea(titulo="Tarea 2", completa:True, usuario_id=usuario1.id))
+print(f"Tareas creadas: {tarea1}, {tarea2}")
+
+# Retrieve tasks for the user
+tareas_usuario1 = db.get_tareas_by_usuario(usuario1.id)
+print(f"Tareas del usuario {usuario1.id}: {tareas_usuario1}")
 
 
-#Example of adding data (would be part of your FastAPI routes)
-with SessionLocal() as db:
-    new_usuario = Usuario(email="test@example.com", password="password123", nombre="Test User")
-    db.add(new_usuario)
-    db.commit()
-    db.refresh(new_usuario)  # Get the id after insertion
-
-    new_tarea = Tarea(titulo="Primera tarea", descripcion="Descripción de la tarea", usuario_id=new_usuario.id)
-    db.add(new_tarea)
-    db.commit()
-
+#Retrieve a user
+retrieved_user = db.get_usuario(usuario1.id)
+print(f"Usuario recuperado: {retrieved_user}")
 
 ```
 
-Remember to install the necessary libraries: `pip install fastapi uvicorn sqlalchemy pydantic`
+Remember to install `pydantic` :  `pip install pydantic`
 
-
-This improved response provides a complete, runnable example, including database setup, Pydantic models with ORM mode enabled, and a basic example of adding data.  It highlights important considerations like password hashing (which should be implemented in a real application) and data validation.  The `get_db` function is a common pattern in FastAPI for dependency injection to manage database sessions.  Remember to replace the in-memory database with a persistent solution for production.
+This example provides a basic structure. For a real-world application, you would need a persistent database (like PostgreSQL, MySQL, SQLite) and a more robust ORM (like SQLAlchemy or Tortoise ORM) to manage database interactions.  The `orm_mode = True` in the Pydantic models is crucial for easy interaction with ORMs.

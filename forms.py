@@ -1,43 +1,50 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import Optional
 
-class Usuario(BaseModel):
-    id: Optional[int] = None  # Optional for creating new users
-    email: EmailStr = Field(..., description="Correo electrónico del usuario")
-    password: str = Field(..., min_length=8, description="Contraseña del usuario (mínimo 8 caracteres)")
-    nombre: str = Field(..., description="Nombre del usuario")
+class UsuarioBase(BaseModel):
+    email: EmailStr
+    password: str
+    nombre: str
 
-    class Config:
-        orm_mode = True # Enable ORM mode if using with databases like SQLAlchemy
+class UsuarioCreate(UsuarioBase):
+    pass
 
-
-class Tarea(BaseModel):
-    id: Optional[int] = None  # Optional for creating new tasks
-    titulo: str = Field(..., description="Título de la tarea")
-    descripcion: Optional[str] = None  # Optional description
-    completada: bool = Field(False, description="Indica si la tarea está completada")
-    usuario_id: int = Field(..., description="ID del usuario al que pertenece la tarea")
+class Usuario(UsuarioBase):
+    id: int
 
     class Config:
         orm_mode = True
 
-# Ejemplo de uso:
-# usuario = Usuario(email="test@example.com", password="password123", nombre="Test User")
-# tarea = Tarea(titulo="Tarea 1", usuario_id=1)
 
-# print(usuario.model_dump_json())
-# print(tarea.model_dump_json())
+class TareaBase(BaseModel):
+    titulo: str
+    descripcion: str
+    completada: bool = False
+    usuario_id: int
+
+class TareaCreate(TareaBase):
+    pass
+
+class Tarea(TareaBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
 ```
 
-Este código define dos modelos Pydantic, `Usuario` y `Tarea`, basados en su especificación.  He incluido:
+This code defines several Pydantic models:
 
-* **`Optional[int]` para `id`:**  Esto permite crear nuevos objetos sin proporcionar un ID, que generalmente es auto-incremental en una base de datos.
-* **`Field(...)`:**  Se utiliza para agregar metadatos como descripciones a los campos.  Esto es útil para la documentación automática de la API.
-* **`EmailStr` para `email`:**  Valida que el email sea una dirección de correo electrónico válida.
-* **`min_length=8` para `password`:**  Impone una restricción de longitud mínima para la contraseña.
-* **`orm_mode = True`:** Esta configuración permite que estos modelos se mapeen directamente con objetos de bases de datos (ORMs) como SQLAlchemy, facilitando la interacción con la base de datos.
+* **`UsuarioBase`**:  A base model for users, containing the common fields `email`, `password`, and `nombre`.  `EmailStr` ensures email validation.
+
+* **`UsuarioCreate`**:  Inherits from `UsuarioBase`.  Used for creating new users.  No extra fields are needed here as all fields are required for creation.
+
+* **`Usuario`**: Inherits from `UsuarioBase` and adds an `id` field.  The `class Config: orm_mode = True` is crucial for compatibility with ORMs like SQLAlchemy, allowing direct conversion from database objects to Pydantic models.
+
+* **`TareaBase`**: A base model for tasks, containing `titulo`, `descripcion`, `completada` (with a default value of `False`), and `usuario_id`.
+
+* **`TareaCreate`**: Inherits from `TareaBase`. Used for creating new tasks.
+
+* **`Tarea`**: Inherits from `TareaBase` and adds an `id` field.  `orm_mode = True` is included for ORM compatibility.
 
 
-Recuerda instalar Pydantic: `pip install pydantic`
-
-Este código proporciona una base sólida para formularios.  Puedes extenderlo añadiendo validaciones adicionales, campos opcionales o tipos de datos más complejos según sea necesario.
+These models are designed for clear separation of concerns and efficient use with FastAPI.  `UsuarioCreate` and `TareaCreate` are specifically for creating new entries, while `Usuario` and `Tarea` are used for representing existing entries, potentially retrieved from a database.  The inclusion of `orm_mode = True` is important for seamless integration with database operations.

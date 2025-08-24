@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Path
 from pydantic import BaseModel, Field
 
 
-app = FastAPI(title="CRUD Usuario", version="1.0.0")
+app = FastAPI(title="Usuario CRUD", version="1.0.0")
 
 db: List[dict] = []
 
@@ -15,16 +15,13 @@ class UsuarioBase(BaseModel):
     password: str
     nombre: str
 
-
 class UsuarioCreate(UsuarioBase):
     pass
-
 
 class UsuarioUpdate(UsuarioBase):
     email: Optional[str] = None
     password: Optional[str] = None
     nombre: Optional[str] = None
-
 
 class UsuarioInDB(UsuarioBase):
     id: int
@@ -33,48 +30,50 @@ class UsuarioInDB(UsuarioBase):
         orm_mode = True
 
 
-class UsuarioResponse(BaseModel):
-    id: int
-    email: str
-    password: str
-    nombre: str
+class Usuario(UsuarioInDB):
+    id: int = Field(..., ge=1)  # for clarity
 
 
-@app.post("/usuarios", response_model=UsuarioResponse, status_code=201, tags=["usuarios"])
+@app.post("/usuarios", response_model=Usuario, status_code=201)
 async def create_usuario(usuario: UsuarioCreate):
-    new_id = len(db) + 1
-    new_usuario = UsuarioInDB(id=new_id, email=usuario.email, password=usuario.password, nombre=usuario.nombre)
+    id = len(db) + 1
+    new_usuario = UsuarioInDB(**usuario.dict(), id=id)
     db.append(new_usuario.dict())
-    return UsuarioResponse(**db[-1])
+    return new_usuario
 
 
-@app.get("/usuarios", response_model=List[UsuarioResponse], tags=["usuarios"])
-async def get_usuarios():
-    return [UsuarioResponse(**usuario) for usuario in db]
+@app.get("/usuarios", response_model=List[Usuario])
+async def read_usuarios():
+    return db
 
 
-@app.get("/usuarios/{id}", response_model=UsuarioResponse, tags=["usuarios"])
-async def get_usuario(id: int = Path(...)):
-    for usuario in db:
-        if usuario["id"] == id:
-            return UsuarioResponse(**usuario)
-    raise HTTPException(status_code=404, detail="Usuario not found")
+@app.get("/usuarios/{id}", response_model=Usuario)
+async def read_usuario(id: int = Path(..., gt=0)):
+    usuario = [u for u in db if u["id"] == id]
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+    return usuario[0]
 
 
-@app.put("/usuarios/{id}", response_model=UsuarioResponse, tags=["usuarios"])
-async def update_usuario(id: int = Path(...), usuario: UsuarioUpdate = ...):
-    for i, u in enumerate(db):
-        if u["id"] == id:
-            updated_usuario = UsuarioInDB(**u, **usuario.dict(exclude_unset=True))
-            db[i] = updated_usuario.dict()
-            return UsuarioResponse(**db[i])
-    raise HTTPException(status_code=404, detail="Usuario not found")
+@app.put("/usuarios/{id}", response_model=Usuario)
+async def update_usuario(id: int = Path(..., gt=0), usuario: UsuarioUpdate = ...):
+    usuario_index = next((i for i, item in enumerate(db) if item["id"] == id), None)
+    if usuario_index is None:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+
+    updated_usuario_data = usuario.dict(exclude_unset=True)
+    db[usuario_index].update(updated_usuario_data)
+    return db[usuario_index]
 
 
-@app.delete("/usuarios/{id}", response_model=None, status_code=204, tags=["usuarios"])
-async def delete_usuario(id: int = Path(...)):
-    for i, u in enumerate(db):
-        if u["id"] == id:
-            del db[i]
-            return
-    raise HTTPException(status_code=404, detail="Usuario not found")
+@app.delete("/usuarios/{id}", status_code=204)
+async def delete_usuario(id: int = Path(..., gt=0)):
+    usuario_index = next((i for i, item in enumerate(db) if item["id"] == id), None)
+    if usuario_index is None:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+    del db[usuario_index]
+    return {"message": "Usuario deleted successfully"}
+
+```
+
+This code uses an in-memory list for simplicity.  For a production application, replace `db` with a proper database connection (e.g., using SQLAlchemy).  Also, note that password handling in this example is extremely insecure and should **never** be used in production.  Proper password hashing (e.g., using bcrypt or Argon2) is crucial.
